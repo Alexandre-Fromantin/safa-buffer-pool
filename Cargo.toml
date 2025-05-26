@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/Alexandre-Fromantin/safa-buffer-pool"
 readme = "README.md"
 keywords = ["rust", "pool", "buffer"]
-categories = ["utils"]
+categories = ["caching"]
 
 [dependencies]
 tokio = { version = "1.45.1", features = ["sync", "rt"] }
