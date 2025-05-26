@@ -1,7 +1,13 @@
 [package]
-name = "BufferPool"
+name = "safa-buffer-pool"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 tokio = { version = "1.45.1", features = ["sync", "rt"] }
+
+license = "MIT"
+repository = "https://github.com/Alexandre-Fromantin/safa-buffer-pool"
+readme = "README.md"
+keywords = ["rust", "pool", "buffer"]
+categories = ["utils"]
