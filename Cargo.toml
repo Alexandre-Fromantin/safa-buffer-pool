@@ -11,4 +11,4 @@ keywords = ["rust", "pool", "buffer"]
 categories = ["caching"]
 
 [dependencies]
-tokio = { version = "1.45.1", features = ["sync", "rt"] }
+tokio = { version = "1.45.1", features = ["sync", "rt", "macros"] }
