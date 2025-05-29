@@ -1,6 +1,6 @@
 [package]
 name = "safa-buffer-pool"
-version = "0.1.0"
+version = "0.3.0"
 authors = ["Alexandre Fromantin <oalexandrefromantin@gmail.com>"]
 edition = "2024"
 description = "A tool, to create and manage buffer pools quickly and easily in Rust"
@@ -11,4 +11,5 @@ keywords = ["rust", "pool", "buffer"]
 categories = ["caching"]
 
 [dependencies]
-tokio = { version = "1.45.1", features = ["sync", "rt", "macros"] }
+delegate = "0.13.3"
+tokio = { version = "1.45.1", features = ["sync", "rt", "macros", "time"] }
