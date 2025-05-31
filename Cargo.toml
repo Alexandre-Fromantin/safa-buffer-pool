@@ -1,6 +1,6 @@
 [package]
 name = "safa-buffer-pool"
-version = "0.3.0"
+version = "1.0.0"
 authors = ["Alexandre Fromantin <oalexandrefromantin@gmail.com>"]
 edition = "2024"
 description = "Safa-buffer-pool is a quick and simple tool to create buffer pools in a mono or multi thread context."
