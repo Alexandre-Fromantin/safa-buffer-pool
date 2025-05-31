@@ -11,6 +11,18 @@ When the number of buffers is greater than the minimum defined, they are removed
 A(first call) --> lifetime --> B(end call): All buffers not used between moments A and B are drop (keeps the minimum buffer).  
 ⚠️In Mono-Thread context, the lifetime does not work automatically, you must use reduce_allocated_buffer() which will calculate the buffer overages.
 
-# Exemple
+# Example
 
-### Mono-Thread
+#### Open example folder
+```
+cd example
+```
+
+#### Run a example
+```
+cargo run --bin mono_thread
+```
+or
+```
+cargo run --bin multi_thread
+```

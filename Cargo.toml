@@ -11,5 +11,4 @@ keywords = ["rust", "pool", "buffer"]
 categories = ["caching"]
 
 [dependencies]
-delegate = "0.13.3"
 tokio = { version = "1.45.1", features = ["sync", "rt", "macros", "time"] }

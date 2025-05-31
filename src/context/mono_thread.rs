@@ -8,13 +8,16 @@ use std::{
 
 use crate::{BufferPool as RawBufferPool, BufferPoolBuilder};
 
-///BufferPool for Mono-threading context
+///BufferPool for Mono-thread context
 #[derive(Clone)]
 pub struct BufferPool {
     inner_rc: Rc<RefCell<RawBufferPool>>,
 }
 
 impl BufferPool {
+    ///Get a new buffer from the pool
+    /// 
+    ///Return None if none buffer available
     pub fn get(&self) -> Option<BufferGuard> {
         let mut pool = self.inner_rc.borrow_mut();
 
@@ -43,6 +46,7 @@ impl BufferPool {
         })
     }
 
+    ///Optimize the number of buffer(deleted excess buffer) in the pool
     pub fn reduce_allocated_buffer(&mut self) {
         let mut pool = self.inner_rc.borrow_mut();
 
@@ -56,6 +60,7 @@ impl BufferPool {
         pool.min_available_nb_buffer = pool.all_available_buffer.len();
     }
 
+    ///Like BufferPoolBuilder.build_mono_thread()
     pub fn from_builder(builder: &BufferPoolBuilder) -> BufferPool {
         let mut all_buffer = Vec::with_capacity(builder.max_nb_buffer);
 
@@ -79,6 +84,7 @@ impl BufferPool {
     }
 }
 
+///A buffer guard for auto-drop of buffer, useable like a buffer
 pub struct BufferGuard {
     pool: BufferPool,
     buffer: ManuallyDrop<Box<[u8]>>,

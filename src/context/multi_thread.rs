@@ -9,13 +9,16 @@ use tokio::{sync::Mutex, time::sleep};
 
 use crate::{BufferPool as RawBufferPool, BufferPoolBuilder};
 
-///BufferPool for Multi-threading context
+///BufferPool for Multi-thread context
 #[derive(Clone)]
 pub struct BufferPool {
     inner_arc: Arc<Mutex<RawBufferPool>>,
 }
 
 impl BufferPool {
+    ///Get a new buffer from the pool
+    /// 
+    ///Return None if none buffer available
     pub async fn get(&self) -> Option<BufferGuard> {
         let mut pool = self.inner_arc.lock().await;
 
@@ -46,6 +49,7 @@ impl BufferPool {
         })
     }
 
+    ///Like BufferPoolBuilder.build_multi_thread()
     pub fn from_builder(builder: &BufferPoolBuilder) -> BufferPool {
         let mut all_buffer = Vec::with_capacity(builder.max_nb_buffer);
 
@@ -97,6 +101,7 @@ impl BufferPool {
     }
 }
 
+///A buffer guard for auto-drop of buffer, useable like a buffer
 pub struct BufferGuard {
     pool: BufferPool,
     buffer: ManuallyDrop<Box<[u8]>>,
