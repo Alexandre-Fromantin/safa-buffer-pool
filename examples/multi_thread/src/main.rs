@@ -1,6 +1,7 @@
+use safa_buffer_pool::builder::BufferPoolBuilder;
+
 #[tokio::main]
 async fn main() {
-    use safa_buffer_pool::BufferPoolBuilder;
     //10Go Pool (10240 buffer of 1Mo)
     let pool = BufferPoolBuilder::new()
         .set_buffer_size(1024 * 1024)

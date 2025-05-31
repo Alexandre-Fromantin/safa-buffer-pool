@@ -1,6 +1,6 @@
 [package]
 name = "safa-buffer-pool"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Alexandre Fromantin <oalexandrefromantin@gmail.com>"]
 edition = "2024"
 description = "Safa-buffer-pool is a quick and simple tool to create buffer pools in a mono or multi thread context."
@@ -11,4 +11,8 @@ keywords = ["rust", "pool", "buffer"]
 categories = ["caching"]
 
 [dependencies]
-tokio = { version = "1.45.1", features = ["sync", "rt", "macros", "time"] }
+tokio = { version = "1.45.1", features = ["sync", "rt", "macros", "time"], optional = true}
+
+[features]
+default = ["async"]
+async = ["dep:tokio"]

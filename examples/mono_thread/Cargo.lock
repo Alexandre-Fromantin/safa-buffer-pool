@@ -66,6 +66,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mono_thread"
+version = "0.1.0"
+dependencies = [
+ "safa-buffer-pool",
+]
+
+[[package]]
 name = "object"
 version = "0.36.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -106,16 +113,8 @@ checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
 name = "safa-buffer-pool"
-version = "0.3.0"
+version = "1.1.0"
 dependencies = [
- "tokio",
-]
-
-[[package]]
-name = "safa-buffer-pool-example"
-version = "0.0.0"
-dependencies = [
- "safa-buffer-pool",
  "tokio",
 ]
 

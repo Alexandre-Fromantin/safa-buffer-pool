@@ -1,13 +1,13 @@
-use std::{
-    cmp::min,
-    mem::ManuallyDrop,
-    ops::{Deref, DerefMut, Index, IndexMut},
-    sync::Arc,
-};
+use std::{ mem::ManuallyDrop, ops::{ Deref, DerefMut, Index, IndexMut }, sync::{ Arc, Weak } };
 
-use tokio::{sync::Mutex, time::sleep};
+use crate::builder::BufferPoolBuilder;
 
-use crate::{BufferPool as RawBufferPool, BufferPoolBuilder};
+use super::common::BufferPool as RawBufferPool;
+
+#[cfg(feature = "async")]
+use tokio::{ sync::Mutex, time::sleep };
+#[cfg(not(feature = "async"))]
+use std::{ sync::Mutex, thread::sleep };
 
 ///BufferPool for Multi-thread context
 #[derive(Clone)]
@@ -17,81 +17,80 @@ pub struct BufferPool {
 
 impl BufferPool {
     ///Get a new buffer from the pool
-    /// 
+    ///
     ///Return None if none buffer available
+    #[cfg(feature = "async")]
     pub async fn get(&self) -> Option<BufferGuard> {
         let mut pool = self.inner_arc.lock().await;
 
-        if let Some(new_buffer) = pool.all_available_buffer.pop() {
-            let nb_available_buffer = pool.all_available_buffer.len();
-            if nb_available_buffer < pool.min_available_nb_buffer {
-                pool.min_available_nb_buffer = nb_available_buffer;
-            }
-
-            return Some(BufferGuard {
-                pool: self.clone(),
-                buffer: ManuallyDrop::new(new_buffer),
-            });
-        }
-
-        if pool.total_nb_buffer == pool.max_nb_buffer {
-            return None;
-        }
-        pool.total_nb_buffer += 1;
-
-        let buffer_size = pool.buffer_size;
-
-        drop(pool); //Free lock
-
-        Some(BufferGuard {
+        pool.get().map(|buffer| BufferGuard {
             pool: self.clone(),
-            buffer: ManuallyDrop::new(vec![0u8; buffer_size].into_boxed_slice()),
+            buffer,
+        })
+    }
+    #[cfg(not(feature = "async"))]
+    pub fn get(&self) -> Option<BufferGuard> {
+        let mut pool = self.inner_arc.lock().expect("mutex lock error");
+
+        pool.get().map(|buffer| BufferGuard {
+            pool: self.clone(),
+            buffer,
         })
     }
 
-    ///Like BufferPoolBuilder.build_multi_thread()
-    pub fn from_builder(builder: &BufferPoolBuilder) -> BufferPool {
-        let mut all_buffer = Vec::with_capacity(builder.max_nb_buffer);
+    ///Optimize the number of buffer by deleted excess buffer of the pool
+    ///
+    /// Return if the pool was droped
+    #[cfg(feature = "async")]
+    async fn clean_excess_buffer(pool_weak: &Weak<Mutex<RawBufferPool>>) -> bool {
+        if let Some(pool_arc) = pool_weak.upgrade() {
+            let mut pool = pool_arc.lock().await;
 
-        for _ in 0..builder.min_nb_buffer {
-            all_buffer.push(vec![0u8; builder.buffer_size].into_boxed_slice());
+            pool.clean_excess_buffer();
+
+            return false;
         }
+        true
+    }
+    #[cfg(not(feature = "async"))]
+    fn clean_excess_buffer(pool_weak: &Weak<Mutex<RawBufferPool>>) -> bool {
+        if let Some(pool_arc) = pool_weak.upgrade() {
+            let mut pool = pool_arc.lock().expect("mutex lock error");
 
-        let pool = BufferPool {
-            inner_arc: Arc::new(Mutex::new(RawBufferPool {
-                total_nb_buffer: builder.min_nb_buffer,
+            pool.clean_excess_buffer();
 
-                max_nb_buffer: builder.max_nb_buffer,
-                min_nb_buffer: builder.min_nb_buffer,
-                buffer_size: builder.buffer_size,
+            return false;
+        }
+        true
+    }
 
-                min_available_nb_buffer: builder.min_nb_buffer,
-
-                all_available_buffer: all_buffer,
-            })),
+    ///Like BufferPoolBuilder.build_multi_thread()
+    pub fn from_builder(builder: &BufferPoolBuilder) -> Self {
+        let pool = Self {
+            inner_arc: Arc::new(Mutex::new(RawBufferPool::from_builder(builder))),
         };
 
         if let Some(over_buffer_lifetime) = builder.over_buffer_lifetime_opt {
             let pool_weak = Arc::downgrade(&pool.inner_arc);
+
+            #[cfg(feature = "async")]
             tokio::spawn(async move {
-                let mut pool_destroyed = false;
-                while !pool_destroyed {
+                loop {
                     sleep(over_buffer_lifetime).await;
 
-                    if let Some(pool_arc) = pool_weak.upgrade() {
-                        let mut pool = pool_arc.lock().await;
+                    if BufferPool::clean_excess_buffer(&pool_weak).await {
+                        return;
+                    }
+                }
+            });
 
-                        let total_droppable_buffer = pool.total_nb_buffer - pool.min_nb_buffer;
-                        let nb_drop_buffer =
-                            min(total_droppable_buffer, pool.min_available_nb_buffer);
+            #[cfg(not(feature = "async"))]
+            std::thread::spawn(move || {
+                loop {
+                    sleep(over_buffer_lifetime);
 
-                        let nb_buffer_to_keep = pool.all_available_buffer.len() - nb_drop_buffer;
-                        pool.total_nb_buffer -= nb_drop_buffer;
-                        pool.all_available_buffer.truncate(nb_buffer_to_keep);
-
-                        pool.min_available_nb_buffer = pool.all_available_buffer.len();
-                    } else {
-                        pool_destroyed = true;
+                    if BufferPool::clean_excess_buffer(&pool_weak) {
+                        return;
                     }
                 }
             });
@@ -112,9 +111,16 @@ impl Drop for BufferGuard {
         let pool_mtx = self.pool.clone();
         let buffer = unsafe { ManuallyDrop::take(&mut self.buffer) }; //unsafe without risk
 
+        #[cfg(feature = "async")]
         tokio::spawn(async move {
             let mut pool = pool_mtx.inner_arc.lock().await;
-            pool.all_available_buffer.push(buffer);
+            pool.free(buffer);
+        });
+
+        #[cfg(not(feature = "async"))]
+        std::thread::spawn(move || {
+            let mut pool = pool_mtx.inner_arc.lock().expect("mutex lock error");
+            pool.free(buffer);
         });
     }
 }

@@ -1,4 +1,4 @@
-use safa_buffer_pool::BufferPoolBuilder;
+use safa_buffer_pool::builder::BufferPoolBuilder;
 
 fn main() {
     //10Go Pool (10240 buffer of 1Mo)

@@ -13,16 +13,19 @@ A(first call) --> lifetime --> B(end call): All buffers not used between moments
 
 # Example
 
+#### Clone Repository
+
+```
+git clone https://github.com/Alexandre-Fromantin/safa-buffer-pool
+cd safa-buffer-pool
+```
+
 #### Open example folder
 ```
-cd example
+cd examples/{example_name}
 ```
 
 #### Run a example
 ```
-cargo run --bin mono_thread
-```
-or
-```
-cargo run --bin multi_thread
+cargo run
 ```

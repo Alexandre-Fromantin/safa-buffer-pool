@@ -1,0 +1,7 @@
+[package]
+name = "multi_thread_without_async"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+safa-buffer-pool = {path = "../..", default-features = false}
